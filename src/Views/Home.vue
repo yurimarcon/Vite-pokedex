@@ -1,12 +1,16 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, reactive, computed } from 'vue';
+import CardPokemons from '../components/CardPokemons.vue';
+import CardPrincipalPokemon from '../components/CardPrincipalPokemon.vue';
 
-let pokemons = ref();
+let pokemons = reactive(ref());
 let urlImgSvg = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/"
 let pokemonSelected = ref(null);
 let search = ref('');
+let loading = ref(true);
+let loadingSelectPokemon = ref(true);
 
-function pokemonsFiltered(){
+const pokemonsFilteredComputed = computed(()=>{
     if(pokemons.value && search.value){
         return pokemons.value.filter(pokemon => {
             return pokemon.name.toLowerCase().includes(search.value.toLowerCase());
@@ -14,29 +18,37 @@ function pokemonsFiltered(){
     }else{
         return pokemons.value;
     }
-}
+})
+
 
 async function getPokemons() {
-    await fetch('https://pokeapi.co/api/v2/pokemon/?offset=1&limit=648')
+    // loading.value = true;
+    await fetch('https://pokeapi.co/api/v2/pokemon/?offset=0&limit=648')
         .then(res=>res.json())
         .then(response => {
             pokemons.value = response.results;
         })
         .catch(error => {
             console.log(error);
+        })
+        .finally(()=>{
+            loading.value = false;
         });
+
 }
 
 function selectPokemon(pokemon) {
-    
+    loadingSelectPokemon.value = true;
     fetch(pokemon.url)
         .then(res=>res.json())
         .then(response => {
             pokemonSelected.value = response;
-            // console.log(pokemonSelected.value);
         })
         .catch(error => {
             console.log(error);
+        })
+        .finally(()=>{
+            loadingSelectPokemon.value = false;
         });
 }
 
@@ -50,43 +62,10 @@ onMounted(() => {
 
         <div class="row contudo-tela-pokemons">
             <div class="col-12 col-md-6">
-                <section class="d-flex justify-content-center">
-                    <div 
-                    v-if="pokemonSelected"
-                    class="card card-pokemon-principal shadow p-3 my-3 text-center">
-                        <h1>{{pokemonSelected.name.charAt(0).toUpperCase() + pokemonSelected.name.substr(1) }}</h1>
-                        <img :src="pokemonSelected.sprites.other.dream_world.front_default" alt="Pokemon-pincipal">
-                        <hr>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h5>Tipo</h5>
-                                <p>{{pokemonSelected.types[0].type.name}}</p>
-                                <h5>Altura</h5>
-                                <p>{{pokemonSelected.height}}</p>
-                                <h5>Peso</h5>
-                                <p>{{pokemonSelected.weight}}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <h5>Habilidades</h5>
-                                <p 
-                                v-for="habilidad in pokemonSelected.abilities" 
-                                :key="habilidad.id"
-                                >
-                                    {{habilidad.ability.name}}
-                                </p>
-                            </div>
-
-                        </div>
-                    </div>
-                    <div
-                    v-else
-                    class="card card-pokemon-principal shadow p-3 my-3 text-center"
-                    >
-                        <h1>???????</h1>
-                        <img src="../assets/egg.svg" alt="Pokemon-pincipal">
-                        <hr>
-                    </div>
-                </section>
+                <CardPrincipalPokemon 
+                :pokemonSelected=pokemonSelected
+                :loading=loadingSelectPokemon
+                />
             </div>
 
             <div class="col-12 col-md-6">
@@ -100,26 +79,28 @@ onMounted(() => {
                     v-model="search"
                     >
                     <hr>
-                
-                    <div class="row listagem-pokemons">
-                        <div 
-                        v-for="pokemon in pokemonsFiltered()"
+
+                    <div 
+                    v-if="loading" 
+                    class="spinner-border text-primary text-center mx-auto"
+                    role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+
+                    <div 
+                    class="row listagem-pokemons">
+                        <CardPokemons 
+                        v-for="pokemon in pokemonsFilteredComputed"
                         :key="pokemon.name"
-                        class="card card-pokemon"
                         @click="selectPokemon(pokemon)"
-                        >
-                            <h2>{{pokemon.name.charAt(0).toUpperCase() + pokemon.name.substr(1)}}</h2>
-                            <img :src="urlImgSvg + (pokemon.url.split('/')[6]) + '.svg'" :alt="pokemon.name"/>
-                        </div>
+                        :name=pokemon.name
+                        :url=pokemon.url
+                        :urlImgSvg=urlImgSvg
+                        />
                     </div>
                 </div>
             </div>
-
         </div>
-        
-
-
-
     </div>
 </template>
 
@@ -127,40 +108,8 @@ onMounted(() => {
 .contudo-tela-pokemons{
     margin-bottom: 100px;
 }
-.card-pokemon-principal{
-    background-color: #FBAB7E;
-    background-image: linear-gradient(62deg, #FBAB7E 0%, #F7CE68 100%);
-    min-width: 400px;
-    min-height: 500px;
-    margin: auto;
-}
-.card-pokemon-principal img{
-    height: 120px;
-}
 .listagem-pokemons{
     max-height: 420px;
     overflow-y: scroll;
 }
-.card-pokemon{
-    background-color: #85FFBD;
-    background-image: linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%);
-    padding: 1rem;
-    max-width: 150px;
-    margin: .4rem;
-    cursor: pointer;
-}
-.card-pokemon:hover{
-    background-color: #FFFB7D;
-    background-image: linear-gradient(45deg, #81c29f 0%, #85FFBD 100%);
-    padding: .8rem;
-}
-.card-pokemon h2{
-    text-align: center;
-    font-size: 1.2rem;
-}
-.card-pokemon img{
-    height: 80px
-
-}
-
 </style>
