@@ -7,11 +7,7 @@ import host from 'vite-plugin-host'
 export default defineConfig({
   plugins: [
     vue(), 
-    VitePWA({
-      workbox: {
-        cleanupOutdatedCaches: false  
-      }  
-    }), 
+    VitePWA(),
     host()
   ],
 })
