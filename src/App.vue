@@ -26,7 +26,7 @@
 
     <footer class="py-3 bg-primary">
       <div class="container text-center text-light">
-        <span class="">&copy; 2020 Pokedex</span>
+        <span class="">&copy; 2022 Pokedex</span>
       </div>
     </footer>
   </div>
